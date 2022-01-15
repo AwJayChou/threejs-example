@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Document</title>
+		<style>
+			body {
+				font-family: monospace;
+				background-color: #000;
+				color: #fff;
+				margin: 0px;
+				overflow: hidden;
+			}
+			#info {
+				color: #fff;
+				position: absolute;
+				top: 10px;
+				width: 100%;
+				text-align: center;
+				z-index: 100;
+				display: block;
+			}
+			#info a,
+			.button {
+				color: #f00;
+				font-weight: bold;
+				text-decoration: underline;
+				cursor: pointer;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="info">obj 模型加载</div>
+		<body>
+			<div id="canvas-frame"></div>
+		</body>
+		<!-- <script type="module">
+			import * as THREE from "../build/three.module.js";
+		</script> -->
+		<script src="/public/build/three.js"></script>
+		<script src="../js/loaders//OBJLoader.js"></script>
+
+		<script type="module">
+			import { TrackballControls } from "../jsm/controls/TrackballControls.js";
+
+			init();
+			animate();
+			var renderer, container, camera, scene;
+			var mesh, group;
+			//通过x,y,z指定旋转中心，obj是要旋转的对象
+			function changePivot(x, y, z, obj) {
+				let wrapper = new THREE.Object3D();
+				wrapper.position.set(x, y, z);
+				wrapper.add(obj);
+				obj.position.set(-x, -y, -z);
+				return wrapper;
+			}
+			function init() {
+				// contianer = document.createElement("div");
+				// document.body.appendChild(contianer);
+				camera = new THREE.PerspectiveCamera(
+					45,
+					window.innerWidth / window.innerHeight,
+					1,
+					2000
+				);
+				camera.position.x = 100;
+				camera.position.y = 200;
+				camera.position.z = 300;
+
+				renderer = new THREE.WebGLRenderer({
+					antialias: true,
+				});
+				renderer.setSize(window.innerWidth, window.innerHeight);
+				document
+					.getElementById("canvas-frame")
+					.appendChild(renderer.domElement);
+				renderer.setClearColor(0xffffff, 1.0);
+				// scene
+				scene = new THREE.Scene();
+				var ambient = new THREE.AmbientLight(0xffffff);
+				scene.add(ambient);
+
+				var cube = new THREE.BoxGeometry(20, 50, 50);
+				var material = new THREE.MeshBasicMaterial({ color: 0x0000ff });
+
+				mesh = new THREE.Mesh(cube, material);
+
+				mesh.position.x = -100;
+				mesh.position.y = -100;
+
+				group = new THREE.Group();
+                // group = changePivot(0,0,0, )
+                // group.position.set(100, 100 , 0)
+				// scene.add(mesh)
+				scene.add(group);
+				group.add(mesh);
+				console.log("## group ==>", group);
+				var axis1 = new THREE.AxisHelper(100);
+				scene.add(axis1);
+
+				var boxHelper = new THREE.BoxHelper(group);
+				scene.add(boxHelper);
+				// three.js 全局搜索helper 进行解析
+				var axis2 = new THREE.AxisHelper(100);
+				axis2.position.copy(mesh.position);
+
+				scene.add(axis2);
+
+				var grid = new THREE.GridHelper(300, 30);
+				scene.add(grid);
+				// var directionalLight = new THREE.DirectionalLight(0xffffff);
+				// directionalLight.position.set(0, 0, 3);
+				// scene.add(directionalLight);
+
+				var box = new THREE.Box3().setFromObject(mesh);
+				console.log("## box", box, mesh.position);
+				const ret = box.center(mesh.position)
+                mesh.position.multiplyScalar(-1)
+                box.center(group.position)
+				// console.log('## mesh.position =>', ret, mesh.position)
+			}
+
+			function onWindowResize() {
+				windowHalfX = window.innerWidth / 2;
+				windowHalfY = windwo.innerHeight / 2;
+				// camera 要设置缩放比率
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectMatrix();
+				// 渲染器要设置宽高
+				renderer.setSize(window.innerWidth, window.innerHeight);
+			}
+
+			function animate() {
+				requestAnimationFrame(animate);
+				render();
+			}
+			function render() {
+				// camera.position.x += (mouseX - camera.position.x) * .05
+				// camera.position.y += ( -mouseY - camera.position.y) * .05
+				// 加上raycaster 计算鼠标和相机的距离
+				// raycaster.setFromCamera(mouse, camera)
+				// var intersects = raycaster.intersectObjects(scene.children)
+				// console.log('## intersects ==>', intersects, scene.children)
+				// if(intersects.length > 0) {
+				// 	if(INTERSECTED !== intersects[0].object) {
+				// 		if(INTERSECTED) INTERSECTED.material.emissive.setHex(INTERSECTED.currentHex)
+				// 		INTERSECTED = intersects[0].object;
+				// 		INTERSECTED.currentHex = INTERSECTED.material.emissive.getHex();
+				// 		INTERSECTED.material.emissive.setHex(0xff0000)
+				// 	}
+				// } else {
+				// 	if(INTERSECTED) INTERSECTED.material.emissive.setHex(INTERSECTED.currentHex)
+				// 	INTERSECTED = null
+				// }
+
+				// controls.update();
+				// 默认场景的位置是 0 0
+				// mesh.rotation.y += 0.01
+				group.rotation.y += 0.01;
+				camera.lookAt(scene.position);
+				renderer.render(scene, camera);
+			}
+		</script>
+	</body>
+</html>

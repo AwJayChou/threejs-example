@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>高效绘制点数据</title>
+		<style>
+			body {
+				color: #cccccc;
+				font-family: "Gill Sans", "Gill Sans MT", Calibri, "Trebuchet MS",
+					sans-serif;
+				font-size: 13px;
+				text-align: center;
+				background-color: #050505;
+				margin: 0px;
+				overflow: hidden;
+			}
+			#info {
+				position: absolute;
+				top: 0px;
+				width: 100%;
+				padding: 5px;
+			}
+			a {
+				color: #0080ff;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="container"></div>
+		<div id="info">webgl高性能渲染，保持高帧数</div>
+        <script src="/public/build/three.js"></script>
+		<!-- <script src="../js/three.js"></script> -->
+		<!-- <script
+			src="http://www.yanhuangxueyuan.com/versions/threejsR92/build/three.js"
+			data-ke-src="js/Three.js" -->
+		></script>
+		<!-- <script src="../js/Detector.js"></script>
+    <script src="../js/Stats.js"></script> -->
+		<script type="module">
+            import { TrackballControls } from '../jsm/controls/TrackballControls.js';
+			// 浏览器是否支持webgl 不支持展示文案
+			// if(!Detector.webgl) Detector.addGetWebGLMessage();
+			var container, stats;
+			var camera, scene, renderer;
+			var mesh, particleSystem;
+            var group, controls
+			init();
+			animate();
+			function addShape(shape, color, x, y, z, rx, ry, rz, s) {
+				// var point = shape.createPointGeometry(5);
+                // var shapeGeometry = new THREE.ShapeGeometry(shape)
+                var point = shape.makeGeometry(5);
+                console.log('## point ==> ', point)
+				var line = new THREE.Line(
+					point,
+					new THREE.LineBasicMaterial({ color })
+				);
+                line.position.set(x, y, z -25)
+                line.rotation.set(rx, ry, rz)
+                line.scale.set(s, s, s)
+                var axis2 = new THREE.AxisHelper(100);
+				axis2.position.copy(line.position);
+                group.add(axis2)
+                group.add(line)
+			}
+			function init() {
+				container = document.getElementById("container");
+
+				camera = new THREE.PerspectiveCamera(
+					27,
+					window.innerWidth / window.innerHeight,
+					1,
+					3500
+				);
+				camera.position.z = 750;
+
+				scene = new THREE.Scene();
+                group = new THREE.Group()
+                scene.add(group)
+				var color = new THREE.Color();
+
+				// var circleRadius = 50;
+                // // shape 继承于 path 
+				// var circleShape = new THREE.Shape();
+                // // 这个是起点 moveTo
+				// circleShape.moveTo(circleRadius, 0);
+                // // 二次贝塞尔曲线 acpx acpy 控制点 ax, ay尾点
+                // // quadraticCurveTo(aCPx, aCPy, aX, aY) {
+				// circleShape.quadraticCurveTo(0, circleRadius, -circleRadius, 0);
+                
+				// addShape(circleShape, 0x00f000, 0, 0, 0, 0, 0, 0, 1);
+				// 渲染器
+				renderer = new THREE.WebGLRenderer({ antialias: false });
+				// renderer.setClearColor(0xffffff)
+				renderer.setPixelRatio(window.devicePixelRatio);
+				renderer.setSize(window.innerWidth, window.innerHeight);
+
+				// renderer.gammaInput = true;
+				// renderer.gammaOutput = true;
+
+				container.appendChild(renderer.domElement);
+                controls = new TrackballControls(camera, renderer.domElement)
+				// stats = new Stats();
+				// stats.domElement.style.position = 'absolute'
+				// stats.domElement.style.top = '0px'
+				// container.appendChild(stats.domElement)
+
+				const curve = new THREE.CubicBezierCurve(
+					new THREE.Vector2( -10, 0 ),
+					new THREE.Vector2( -5, 15 ),
+					new THREE.Vector2( 20, 15 ),
+					new THREE.Vector2( 10, 0 )
+				);
+
+				const points = curve.getPoints( 50 );
+				const geometry = new THREE.BufferGeometry().setFromPoints( points );
+				console.log('## points =>', points, geometry)
+				const material = new THREE.LineBasicMaterial( { color : 0xff0000 } );
+
+				// Create the final object to add to the scene
+				const curveObject = new THREE.Line( geometry, material );
+
+				scene.add(curveObject)
+			}
+
+			function onWindowResize() {
+				// resize 修改纵横比
+				camera.aspect = window.innerWidth / window.innerHeight;
+				// 修改投影相机
+				camera.updateProjectionMatrix();
+				renderer.setSize(window.innerWidth, window.innerHeight);
+			}
+
+			function animate() {
+				requestAnimationFrame(animate);
+				render();
+				// stats.update()
+			}
+
+			function render() {
+				var time = Date.now() * 0.001;
+				// particleSystem.rotation.x = time * 0.25;
+				// particleSystem.rotation.y = time * 0.5;
+				renderer.render(scene, camera);
+                controls.update();
+			}
+		</script>
+	</body>
+</html>

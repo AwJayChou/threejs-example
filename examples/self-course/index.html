@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Document</title>
+		<style>
+			body {
+				font-family: monospace;
+				background-color: #000;
+				color: #fff;
+				margin: 0px;
+				overflow: hidden;
+			}
+			#info {
+				color: #fff;
+				position: absolute;
+				top: 10px;
+				width: 100%;
+				text-align: center;
+				z-index: 100;
+				display: block;
+			}
+			#info a,
+			.button {
+				color: #f00;
+				font-weight: bold;
+				text-decoration: underline;
+				cursor: pointer;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="info">obj 模型加载</div>
+		<!-- <script type="module">
+			import * as THREE from "../build/three.module.js";
+		</script> -->
+        <script src="/public/build/three.js"></script>
+		<script src="../js/loaders//OBJLoader.js"></script>
+
+		<script type="module">
+			import { TrackballControls } from '../jsm/controls/TrackballControls.js';
+			var contianer;
+			var camera, scene, renderer, raycaster;
+			var mouseX = 0,
+				mouseY = 0;
+			var windowHalfX = window.innerWidth / 2;
+			var windowHalfY = window.innerHeight / 2;
+
+			var mouse = new THREE.Vector2(), INTERSECTED
+
+			var controls;
+
+			init();
+			animate();
+
+			function init() {
+				contianer = document.createElement("div");
+				document.body.appendChild(contianer);
+				camera = new THREE.PerspectiveCamera(
+					45,
+					window.innerWidth / window.innerHeight,
+					1,
+					2000
+				);
+				camera.position.z = 3
+				// scene
+				scene = new THREE.Scene();
+
+				var ambient = new THREE.AmbientLight(0xffffff);
+				scene.add(ambient);
+				// var directionalLight = new THREE.DirectionalLight(0xffffff);
+				// directionalLight.position.set(0, 0, 3);
+				// scene.add(directionalLight);
+
+				// texture
+				var manager = new THREE.LoadingManager();
+				manager.onProgress = function (item, loaded, total) {
+					console.log("## manager loading ==>", item, loaded, total);
+				};
+
+				var texture = new THREE.Texture();
+				// 可以看一下texture是什么
+				console.log("## texture ==>", texture);
+				var onProgress = function (xhr) {
+					if (xhr.lengthComputable) {
+						var percentComplete = (xhr.loaded / xhr.total) * 100;
+						console.log(
+							"## loading progress",
+							Math.round(percentComplete, 2) + "% downloaded"
+						);
+					}
+				};
+				var onError = function (xhr) {};
+
+				var grid = new THREE.GridHelper(30, 10)
+				scene.add(grid)
+
+				var loader = new THREE.ImageLoader(manager);
+				// Cerberus_A.jpg Cerberus_M.jpg Cerberus_N.jpg Cerberus_R.jpg Cerberus_RM.jpg
+                // 发起了一个url请求
+				loader.load("../models/obj/cerberus/Cerberus_M.jpg", function (image) {
+					// loader解析出来
+					console.log("## image ==> ", image);
+                    // 一个img标签含有src
+					texture.image = image;
+					texture.needsUpdate = true;
+				});
+
+				var loader = new THREE.OBJLoader(manager);
+				loader.load(
+					"../models/obj/cerberus/Cerberus.obj",
+					function (object) {
+						console.log('## object ==>', object)
+						object.traverse(function (child) {
+							if (child instanceof THREE.Mesh) {
+								child.material.map = texture;
+							}
+						});
+						// object.position.y = -80;
+						var mater = new THREE.PointsMaterial({
+							color: 0x00ff00,
+							size: 10
+						})
+						var points = new THREE.Points(object, mater)
+						scene.add(object);
+						// scene.add(points);
+					},
+					onProgress,
+					onError
+				);
+				raycaster = new THREE.Raycaster();
+				renderer = new THREE.WebGLRenderer();
+				renderer.setPixelRatio(window.devicePixelRatio);
+				renderer.setSize(window.innerWidth, window.innerHeight);
+				renderer.setClearColor('#FFFFFF')
+				contianer.appendChild(renderer.domElement);
+				
+				controls = new TrackballControls(camera, renderer.domElement)
+				document.addEventListener("mousemove", onDocumentMouseMove, false);
+				document.addEventListener("resize", onWindowResize, false);
+			}
+			function onDocumentMouseMove(event) {
+				mouseX = (event.clientX - windowHalfX) / 2;
+				mouseY = (event.clientY - windowHalfY) / 2;
+				// 鼠标相交物体
+				mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+				mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+				// console.log('## mouse ==>', mouse)
+			}
+
+			function onWindowResize() {
+				windowHalfX = window.innerWidth / 2;
+				windowHalfY = windwo.innerHeight / 2;
+                // camera 要设置缩放比率
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectMatrix()
+                // 渲染器要设置宽高
+                renderer.setSize(window.innerWidth, window.innerHeight)
+			}
+
+            function animate() {
+                requestAnimationFrame(animate)
+                render()
+            }
+            function render() {
+                // camera.position.x += (mouseX - camera.position.x) * .05
+                // camera.position.y += ( -mouseY - camera.position.y) * .05
+				// 加上raycaster 计算鼠标和相机的距离
+				// raycaster.setFromCamera(mouse, camera)
+				// var intersects = raycaster.intersectObjects(scene.children)
+				// console.log('## intersects ==>', intersects, scene.children)
+				// if(intersects.length > 0) {
+				// 	if(INTERSECTED !== intersects[0].object) {
+				// 		if(INTERSECTED) INTERSECTED.material.emissive.setHex(INTERSECTED.currentHex)
+				// 		INTERSECTED = intersects[0].object;
+				// 		INTERSECTED.currentHex = INTERSECTED.material.emissive.getHex();
+				// 		INTERSECTED.material.emissive.setHex(0xff0000)
+				// 	}
+				// } else {
+				// 	if(INTERSECTED) INTERSECTED.material.emissive.setHex(INTERSECTED.currentHex)
+				// 	INTERSECTED = null
+				// }
+				
+				controls.update();
+				// 默认场景的位置是 0 0
+                camera.lookAt(scene.position)
+                renderer.render(scene, camera)
+            }
+		</script>
+	</body>
+</html>
