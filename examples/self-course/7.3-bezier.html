@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Document</title>
+		<link type="text/css" rel="stylesheet" href="../main.css" />
+		<style>
+			.label {
+				color: black;
+			}
+		</style>
+	</head>
+	<body>
+		<script type="module">
+			import * as THREE from "../../build/three.module.js";
+			import { TrackballControls } from "../jsm/controls/TrackballControls.js";
+			import { OrbitControls } from "../jsm/controls/OrbitControls.js";
+			import {
+				CSS2DRenderer,
+				CSS2DObject,
+			} from "../jsm/renderers/CSS2DRenderer.js";
+			// 基本渲染三件套
+			let renderer, scene, camera;
+			// mesh 三大件
+			let mesh, geometry, material;
+			let controls;
+			// css 渲染器
+			let labelRenderer;
+			init();
+			animate();
+			// render()
+			// 定点概念 几何体结构
+			// http://www.yanhuangxueyuan.com/Three.js/
+			function init() {
+				camera = new THREE.PerspectiveCamera(
+					75,
+					window.innerWidth / window.innerHeight,
+					1,
+					10000
+				);
+				camera.position.set(200, 200, 1000);
+				// camera.position.z = 1000
+				scene = new THREE.Scene();
+
+				// camera.lookAt( scene.position );
+
+				const axis = new THREE.AxesHelper(1000);
+				// 红 x 绿 y 蓝 z
+				axis.setColors(0xff0000, 0x00ff00, 0x0000ff);
+				scene.add(axis);
+
+				// webglRender
+				initWebglRender();
+
+				initCssRenderer();
+
+				// controls
+				initControls();
+
+				var geometry = new THREE.BufferGeometry(); //声明一个几何体对象Geometry
+				// 三维样条曲线  Catmull-Rom算法
+				var curve = new THREE.CatmullRomCurve3([
+					new THREE.Vector3(-50, 20, 90),
+					new THREE.Vector3(-10, 40, 40),
+					new THREE.Vector3(0, 0, 0),
+					new THREE.Vector3(60, -60, 0),
+					new THREE.Vector3(70, 0, 80),
+				]);
+				//getPoints是基类Curve的方法，返回一个vector3对象作为元素组成的数组
+				var points = curve.getPoints(100); //分段数100，返回101个顶点
+				// setFromPoints方法从points中提取数据改变几何体的顶点属性vertices
+				geometry.setFromPoints(points);
+				//材质对象
+				var material = new THREE.LineBasicMaterial({
+					color: 0x000000,
+				});
+				//线条模型对象
+				var line = new THREE.Line(geometry, material);
+				scene.add(line); //线条对象添加到场景中
+
+                var p1 = new THREE.Vector3(-80, 0, 0);
+                var p2 = new THREE.Vector3(-40, 100, 0);
+                var p22 = new THREE.Vector3(40, 100, 0)
+                var p3 = new THREE.Vector3(80, 0, 0);
+                // 三维二次贝赛尔曲线 Quadratic 是二次 CubicBezier 是三次贝塞尔曲线 中间两个点是控制点
+                // 尾号3是 表示是3d还是2d 
+                var curve = new THREE.QuadraticBezierCurve3(p1, p2, p3);
+                var bezier = curve.getPoints(100)
+                geometry = new THREE.BufferGeometry();
+                geometry.setFromPoints(bezier)
+                var quadraticBezier = new THREE.Line(geometry, material)
+
+                scene.add(quadraticBezier)
+                // 三维三次贝赛尔曲线
+                var curve = new THREE.CubicBezierCurve3(p1, p2, p22,  p3);
+                var bezier = curve.getPoints(100)
+                var geometryBezier = new THREE.BufferGeometry();
+                geometryBezier.setFromPoints(bezier)
+                var quadraticBezier = new THREE.Line(geometryBezier, material)
+                scene.add(quadraticBezier)
+				window.addEventListener("resize", onWindowResize);
+			}
+
+			function initControls() {
+				const controls = new OrbitControls(camera, labelRenderer.domElement);
+				controls.minDistance = 100;
+				controls.maxDistance = 500;
+			}
+
+			function initWebglRender() {
+				renderer = new THREE.WebGLRenderer({ antialias: true });
+				renderer.setPixelRatio(window.devicePixelRatio);
+				renderer.setSize(window.innerWidth, window.innerHeight);
+				renderer.setClearColor(0xffffff);
+				document.body.appendChild(renderer.domElement);
+			}
+
+			function cssRender(scene, textContent) {
+				const posDiv = document.createElement("div");
+				posDiv.className = "label";
+				posDiv.textContent = textContent;
+				const posLabel = new CSS2DObject(posDiv);
+				posLabel.position.set(...textContent.split(","));
+				scene.add(posLabel);
+			}
+
+			function initCssRenderer() {
+				labelRenderer = new CSS2DRenderer();
+				labelRenderer.setSize(window.innerWidth, window.innerHeight);
+				labelRenderer.domElement.style.position = "absolute";
+				labelRenderer.domElement.style.top = "0px";
+				document.body.appendChild(labelRenderer.domElement);
+			}
+
+			function animate() {
+				requestAnimationFrame(animate);
+				renderer.render(scene, camera);
+				labelRenderer.render(scene, camera);
+			}
+
+			// function animate() {
+			// 	requestAnimationFrame(animate);
+
+			// 	render();
+			// }
+
+			function render() {
+				renderer.render(scene, camera);
+			}
+
+			function onWindowResize() {
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+				renderer.setSize(window.innerWidth, window.innerHeight);
+				labelRenderer.setSize(window.innerWidth, window.innerHeight);
+			}
+		</script>
+	</body>
+</html>

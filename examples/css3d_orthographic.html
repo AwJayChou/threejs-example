@@ -31,7 +31,7 @@
 
 			let scene2, renderer2;
 
-			const frustumSize = 500;
+			const frustumSize = 1000;
 
 			init();
 			animate();
@@ -42,7 +42,7 @@
 				camera = new THREE.OrthographicCamera( frustumSize * aspect / - 2, frustumSize * aspect / 2, frustumSize / 2, frustumSize / - 2, 1, 1000 );
 
 				camera.position.set( - 200, 200, 200 );
-
+				window.camera = camera
 				scene = new THREE.Scene();
 				scene.background = new THREE.Color( 0xf0f0f0 );
 
@@ -50,12 +50,18 @@
 
 				const material = new THREE.MeshBasicMaterial( { color: 0x000000, wireframe: true, wireframeLinewidth: 1, side: THREE.DoubleSide } );
 
+				const axis = new THREE.AxisHelper(1000);
+				// 红 x 绿 y 蓝 z
+				axis.setColors(0xff0000, 0x00ff00, 0x0000ff)
+				scene.add(axis)
+				// scene2.add(axis)
 				// left
 				createPlane(
 					100, 100,
-					'chocolate',
-					new THREE.Vector3( - 50, 0, 0 ),
-					new THREE.Euler( 0, - 90 * THREE.MathUtils.DEG2RAD, 0 )
+					'red',
+					// new THREE.Vector3( - 50, 0, 0 ),
+					new THREE.Vector3( -50, 0, 0 ),
+					new THREE.Euler( 0,  -90 * THREE.MathUtils.DEG2RAD, 0 )
 				);
 				// right
 				createPlane(
@@ -64,12 +70,28 @@
 					new THREE.Vector3( 0, 0, 50 ),
 					new THREE.Euler( 0, 0, 0 )
 				);
-				// top
+				// // top
 				createPlane(
 					100, 100,
 					'yellowgreen',
 					new THREE.Vector3( 0, 50, 0 ),
-					new THREE.Euler( - 90 * THREE.MathUtils.DEG2RAD, 0, 0 )
+					// new THREE.Euler( - 90 * THREE.MathUtils.DEG2RAD, 0, 0 )
+					new THREE.Euler( 90 * THREE.MathUtils.DEG2RAD, 0, 0 )
+				);
+				// new add x series
+				createPlane(
+					100, 100,
+					'purple',
+					new THREE.Vector3( 50, 0, 0 ),
+					// new THREE.Euler( - 90 * THREE.MathUtils.DEG2RAD, 0, 0 )
+					new THREE.Euler( 0, - 90 * THREE.MathUtils.DEG2RAD, 0 )
+				);
+				// new add x series
+				createPlane(
+					100, 100,
+					'grey',
+					new THREE.Vector3( 0, 0, -50 ),
+					new THREE.Euler( 0, 0, 0 )
 				);
 				// bottom
 				createPlane(
@@ -92,9 +114,17 @@
 				renderer2.domElement.style.top = 0;
 				document.body.appendChild( renderer2.domElement );
 
+				// 控制场景缩放
 				const controls = new OrbitControls( camera, renderer2.domElement );
 				controls.minZoom = 0.5;
 				controls.maxZoom = 2;
+
+				// createPlane(
+				// 	100, 100,
+				// 	'chocolate',
+				// 	new THREE.Vector3( - 50, 0, 0 ),
+				// 	new THREE.Euler( 0, - 90 * THREE.MathUtils.DEG2RAD, 0 )
+				// );
 
 				function createPlane( width, height, cssColor, pos, rot ) {
 
@@ -108,7 +138,7 @@
 					object.position.copy( pos );
 					object.rotation.copy( rot );
 					scene2.add( object );
-
+					console.log('## object ==>', object)
 					const geometry = new THREE.PlaneGeometry( width, height );
 					const mesh = new THREE.Mesh( geometry, material );
 					mesh.position.copy( object.position );

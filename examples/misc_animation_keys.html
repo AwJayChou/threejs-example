@@ -60,10 +60,10 @@
 				// Interpolating Euler angles (.rotation property) can be problematic and is currently not supported
 
 				// set up rotation about x axis
-				const xAxis = new THREE.Vector3( 1, 0, 0 );
+				const xAxis = new THREE.Vector3( 0, 1, 0 );
 
 				const qInitial = new THREE.Quaternion().setFromAxisAngle( xAxis, 0 );
-				const qFinal = new THREE.Quaternion().setFromAxisAngle( xAxis, Math.PI );
+				const qFinal = new THREE.Quaternion().setFromAxisAngle( xAxis, Math.PI / 2 );
 				const quaternionKF = new THREE.QuaternionKeyframeTrack( '.quaternion', [ 0, 1, 2 ], [ qInitial.x, qInitial.y, qInitial.z, qInitial.w, qFinal.x, qFinal.y, qFinal.z, qFinal.w, qInitial.x, qInitial.y, qInitial.z, qInitial.w ] );
 
 				// COLOR

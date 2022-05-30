@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Document</title>
+		<link type="text/css" rel="stylesheet" href="../main.css" />
+	</head>
+	<body>
+		<script type="module">
+			import * as THREE from "../../build/three.module.js";
+			import { TWEEN } from "../jsm/libs/tween.module.min.js";
+			import { OrbitControls } from "../jsm/controls/OrbitControls.js";
+			import { GUI } from "../jsm/libs/dat.gui.module.js";
+
+			// 创建一个时钟对象Clock
+			var clock = new THREE.Clock();
+
+			const gameStatus = {
+				init: "init",
+				restart: "restart",
+			};
+
+			let currentGameStatus = gameStatus.init;
+			// let currentGameStatus = gameStatus.restart;
+
+			const frustumSize = 300;
+			const aspect = window.innerWidth / window.innerHeight;
+			var textureLoader = new THREE.TextureLoader();
+			let renderer, scene, camera;
+			// 业务上需要控制的内容
+			let groundMap;
+			let isMouseClick = false; // 是否鼠标点击
+			let raycaster = new THREE.Raycaster();
+			let mouse = new THREE.Vector2();
+			let pipeList = [];
+			let currentScore = 0;
+
+			let cancelClick = () => {};
+			function init() {
+				// 相机
+				camera = new THREE.OrthographicCamera( // left right top bottom
+					(frustumSize * aspect) / -2,
+					(frustumSize * aspect) / 2,
+					frustumSize / 2,
+					frustumSize / -2
+				);
+				camera.position.set(0, 0, 200);
+				// 场景
+				scene = new THREE.Scene();
+				//
+				const axis = new THREE.AxisHelper(1000);
+				scene.add(axis);
+				// 灯光
+				const light = new THREE.DirectionalLight(0xffffff);
+				light.position.set(200, 200, 200);
+				scene.add(light);
+				// 渲染器
+				renderer = new THREE.WebGLRenderer();
+				renderer.setPixelRatio(window.devicePixelRatio);
+				renderer.setSize(window.innerWidth, window.innerHeight);
+				document.body.appendChild(renderer.domElement);
+
+				const controls = new OrbitControls(camera, renderer.domElement);
+				window.addEventListener("resize", onWindowResize);
+				// 监听鼠标移动
+				window.addEventListener("click", onDocuementMouseMove, false);
+
+				createBase();
+				createDoublePipe();
+				createBird();
+				createBottom();
+				createRestart();
+
+				createScore();
+
+				cancelClick = onBirdClick();
+			}
+
+			function createMaterial(url) {
+				return new THREE.MeshBasicMaterial({
+					map: textureLoader.load(url),
+				});
+			}
+
+			// 创建主背景
+			function createBase() {
+				const city = new THREE.PlaneGeometry(200, 200);
+				const cityMaterial = createMaterial("./texture/bg.png");
+				const mesh = new THREE.Mesh(city, cityMaterial);
+				mesh.position.set(0, 0, 0);
+				//
+				// mesh.rotateX(90)
+				scene.add(mesh);
+			}
+			let restart;
+			// 创建重新启动
+			// mesh继承于object3d，才会有layer属性
+			// geometry 继承于bufferGeometry
+			function createRestart() {
+				const planeRestart = new THREE.PlaneGeometry(50, 20);
+				const cityMaterial = createMaterial("./texture/restart.png");
+				restart = new THREE.Mesh(planeRestart, cityMaterial);
+				restart.position.set(0, 0, 100);
+
+				// 默认进行隐藏
+				restart.visible = false;
+				// mesh.rotateX(90)
+				scene.add(restart);
+			}
+
+			let bottomMesh;
+			function createBottom() {
+				const city = new THREE.PlaneGeometry(200, 10);
+				const cityMaterial = createMaterial("./texture/bottom.png");
+				bottomMesh = new THREE.Mesh(city, cityMaterial);
+				bottomMesh.position.set(0, -95, 50);
+				groundMap = cityMaterial.map;
+				// 默认也会自动拉伸，所以不需要repeactWrapping
+				// 是否生效可以用bird 来进行测试
+				cityMaterial.map.wrapS = THREE.RepeatWrapping;
+				// x水平方向重复，y垂直方向重复
+				cityMaterial.map.repeat.set(20, 1);
+				scene.add(bottomMesh);
+			}
+			let bird;
+			let initTween;
+			function createBird() {
+				const birdGeo = new THREE.PlaneGeometry(15, 15);
+				const birdMaterial = createMaterial("./texture/bird.png");
+				bird = new THREE.Mesh(birdGeo, birdMaterial);
+				bird.position.set(-40, 0, 50);
+				// 目前的模式好像是画了一个三角形 上 右 下 右下
+				const uvPos = [0, 1, 0.34, 1, 0, 0, 0.34, 0];
+				// uv是逆时针的，http://t.zoukankan.com/yhhzxcvbnm-p-8251654.html
+				// const uvPos = [0, 0, 0.34, 0, 0.34, 1, 0, 1]
+				birdGeo.setAttribute("uv", new THREE.Float32BufferAttribute(uvPos, 2));
+				scene.add(bird);
+				const target = {
+					x: bird.rotation.x,
+					y: bird.rotation.y,
+					z: -Math.PI / 4,
+				};
+				// 清除所有的tween
+				// TWEEN.removeAll();
+				initTween = new TWEEN.Tween(bird.rotation)
+					.to(target, 800)
+					.easing(TWEEN.Easing.Exponential.InOut)
+					.start();
+			}
+
+			// 创建分数模板 两位数怎么处理？
+			// 或者用 cssDom render进行处理
+			let scoreMesh;
+			let scoreObj;
+			let scoreGeometry;
+			function createScore() {
+				scoreGeometry = new THREE.PlaneGeometry(15, 20);
+				const scoreMaterial = createMaterial("./texture/score.png");
+				scoreMesh = new THREE.Mesh(scoreGeometry, scoreMaterial);
+				scoreMesh.position.set(0, 70, 100);
+				// 目前的模式好像是画了一个三角形 左上 右上 左下 右下
+				// const uvPos = [0, 1, 0.1, 1, 0, 0, 0.1, 0]; // 0
+				// const uvPos = [0.1, 1, 0.2, 1, 0.1, 0, 0.2, 0]; // 1
+				// const uvPos = [0.2, 1, 0.3, 1, 0.2, 0, 0.3, 0]; // 2
+				// const uvPos = [0.3, 1, 0.4, 1, 0.3, 0, 0.4, 0]; // 3
+				scoreObj = {};
+				// 循环创建十个数字
+				for (let i = 0; i < 10; i++) {
+					scoreObj[i] = [
+						0.1 * i,
+						1,
+						0.1 * (1 + i),
+						1,
+						0.1 * i,
+						0,
+						0.1 * (1 + i),
+						0,
+					];
+				}
+				// n就是第几位数字
+
+				moveScoreScript(0);
+				currentScore = 0;
+				// uv是逆时针的，http://t.zoukankan.com/yhhzxcvbnm-p-8251654.html
+				// const uvPos = [0, 0, 0.34, 0, 0.34, 1, 0, 1]
+				scene.add(scoreMesh);
+			}
+
+			// 通过index 控制当前分数脚本
+			function moveScoreScript(index) {
+				let uvPos = scoreObj[index];
+				scoreGeometry.setAttribute(
+					"uv",
+					new THREE.Float32BufferAttribute(uvPos, 2)
+				);
+				// scene.add(scoreMesh);
+			}
+
+			function onDocuementMouseMove(event) {
+				event.preventDefault();
+				// 鼠标位置归一化
+				mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+				mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+				// console.log("## restart ==>", restart.layers);
+				// 通过摄像机与鼠标更新射线
+				if (restart && restart.visible) {
+					raycaster.setFromCamera(mouse, camera);
+					var intersects = raycaster.intersectObject(restart);
+					// console.log("##intersects ==>", intersects);
+					if (intersects.length > 0) {
+						// scene.remove(restart)
+						restart.visible = false;
+						// 进行初始化 init 方法
+						// render()
+						onRestartClick();
+						currentGameStatus = gameStatus.init;
+						animate();
+					}
+				}
+			}
+
+			// 点击重新启动
+			function onRestartClick() {
+				const pipes = pipeList.flat(Infinity);
+				pipes.forEach((p) => {
+					scene.remove(p);
+				});
+				scene.remove(scoreMesh);
+				pipeList = [];
+				createScore();
+				createDoublePipe();
+				bird.position.set(-40, 0, 50);
+			}
+
+			let clickTween;
+			// 处理小鸟点击
+			function onBirdClick() {
+				const handleClick = () => {
+					isMouseClick = true;
+					// TWEEN.removeAll();
+					// 处理小鸟的移动
+					if (bird) {
+						const rot = bird.rotation.clone();
+						const target = {
+							x: bird.rotation.x,
+							y: bird.rotation.y,
+							z: Math.PI / 4, // 逆时针旋转45度
+						};
+						clickTween = new TWEEN.Tween(bird.rotation)
+							.to(target, 100)
+							.easing(TWEEN.Easing.Exponential.InOut)
+							.start();
+						// position
+						new TWEEN.Tween(bird.position)
+							.to(
+								{
+									x: bird.position.x,
+									y: bird.position.y + 20,
+									z: bird.position.z,
+								},
+								100
+							)
+							.easing(TWEEN.Easing.Exponential.InOut)
+							.start();
+					}
+				};
+
+				window.addEventListener("click", handleClick);
+				window.addEventListener("mouseup", () => {
+					// setTimeout(() => {
+					//     isMouseClick = false
+					// }, 0)
+					isMouseClick = false;
+				});
+				// 需要return 一个方法
+				return () => window.removeEventListener("click", handleClick);
+			}
+
+			function onWindowResize() {
+				const aspect = window.innerWidth / window.innerHeight;
+
+				camera.left = (-frustumSize * aspect) / 2;
+				camera.right = (frustumSize * aspect) / 2;
+				camera.top = frustumSize / 2;
+				camera.bottom = -frustumSize / 2;
+
+				camera.updateProjectionMatrix();
+				renderer.setSize(window.innerWidth, window.innerHeight);
+			}
+			// 地面滑动
+			function groundStart() {
+				if (groundMap) {
+					groundMap.offset.x += 0.05;
+				}
+				return () => (groundMap.offset.x = 0);
+			}
+			// todos 需要动态生成pipe,
+			// todos 游戏增加难度，添加速度
+			function pipeStart() {
+				// 改造生成pipe的原有方法
+				pipeList.forEach((pipeCouple, i) => {
+					// 判断第一个元素
+					// if (index === 0) {
+					pipeCouple.forEach((item, index) => {
+						const pipeItem = item;
+						if (pipeItem) {
+							const orginPos = new THREE.Vector3();
+							orginPos.copy(pipeItem.position);
+							const vect3 = pipeItem.position.clone();
+							vect3.x -= 0.5;
+							pipeItem.position.copy(vect3);
+
+							// 分数控制逻辑
+							// 给mesh加一个done属性 不会进入判断
+							// couple 有两个会循环两次，第二次不要进入判断
+							if (vect3.x < -50 && !item.done && index === 0) {
+								item.done = true;
+								currentScore += 1;
+								moveScoreScript(currentScore);
+							}
+
+							if (index === 0) {
+								// 仅第一个做判断
+								if (vect3.x < -10 && pipeList.length < 2) {
+									// todos 打开
+									createDoublePipe();
+								}
+								// 仅仅第一个做判断 超出边界消失
+								if (vect3.x < -120) {
+									let removePipes = pipeList.shift() || [];
+									// 场景中也需要移除
+									removePipes.forEach((rp) => {
+										scene.remove(rp);
+									});
+								}
+							}
+						}
+						// }
+					});
+				});
+				// todos 如何让pipe停下来？
+				return () => {};
+			}
+
+			function createDoublePipe() {
+				// 生成水管的位置和长度
+				// 默认水管y轴位置是在 (0，0 ) 也就是说100高度 x轴上下方各50px
+				// x为水管中心距离，height为水管高度，-10位距离底部距离
+				// 计算公式 x + (-height/2) = 10 - 100
+				// 下边长度 [20， 100]
+				const pipeHeight = Math.random() * 80 + 20;
+				const positionY = pipeHeight / 2 - 90;
+
+				let pipeTop = createPipe(
+					new THREE.Vector3(120, positionY, 50),
+					pipeHeight
+				);
+
+				// todos 创建上部水管，
+				// 200总高度，pipeHeight 下水管高度，30中间间隔高度
+				// const pipeHeight1 = 200 - pipeHeight - 50;
+				// 下边长度 [20， 100]
+				const pipeHeight1 = 200 - pipeHeight - 80;
+				const positionY1 = 100 - pipeHeight1 / 2;
+				const rotation = Math.PI;
+				let pipeBottom = createPipe(
+					new THREE.Vector3(120, positionY1, 50),
+					pipeHeight1,
+					rotation
+				);
+
+				scene.add(pipeTop, pipeBottom);
+				pipeList.push([pipeTop, pipeBottom]);
+			}
+			// 动态生成pipe
+			function createPipe(
+				pos = new THREE.Vector3(-50, -40, 50),
+				pipeHeight = 100,
+				rotation
+			) {
+				const city = new THREE.PlaneGeometry(20, pipeHeight);
+				const cityMaterial = createMaterial("./texture/pipe.png");
+				const pipe = new THREE.Mesh(city, cityMaterial);
+				pipe.position.copy(pos);
+				if (rotation) {
+					pipe.rotateZ(rotation);
+				}
+				return pipe;
+			}
+			const g = 10;
+			function birdStart(time) {
+				// https://zhidao.baidu.com/question/1113935610706872939.html
+				// 启动则自由落体公式 0.5 * g * t * t
+				// http://www.1010jiajiao.com/gzwl/shiti_id_69f9925e8d265182a818ae622b5904f2
+				// https://www.zhihu.com/zvideo/1303996323792736256
+				// 物体做竖直上抛动作 h = v0 * t - 0.5 * g * t * t 减去自由落体公式
+				// console.log(" ## bird && !isMouseClick", isMouseClick);
+				if (bird && isMouseClick) {
+					const post = bird.position.clone();
+					if (post.y < -90) {
+						return;
+					}
+					const h = 0.5 * g * time * time * 1000;
+					post.y -= h;
+					bird.position.copy(post);
+				} else {
+					const target = {
+						x: bird.rotation.x,
+						y: bird.rotation.y,
+						z: -Math.PI / 4,
+					};
+
+					new TWEEN.Tween(bird.rotation)
+						.to(target, 500)
+						.easing(TWEEN.Easing.Exponential.InOut)
+						.start();
+				}
+
+				// 判断相交方法
+				const birdBox = new THREE.Box3();
+				birdBox.setFromObject(bird);
+				let pipes = pipeList.flat(Infinity).concat(bottomMesh);
+				pipes.forEach((p) => {
+					let targetBox = new THREE.Box3().setFromObject(p);
+					if (birdBox.intersectsBox(targetBox)) {
+						currentGameStatus = gameStatus.restart;
+						// console.log("@@ 两物体相交===》");
+						// createRestart()
+						restart.visible = true;
+						render();
+					}
+				});
+			}
+
+			let groundEnd = () => {};
+			let pipeEnd = () => {};
+			let bridEnd = () => {};
+			// script 游戏运行脚本
+			function execScript() {
+				var time = clock.getDelta(); //返回时间单位：秒
+				// 可以在控制打印查看你的渲染时间间隔
+				// 地面运动
+				groundEnd = groundStart();
+				pipeEnd = pipeStart();
+				bridEnd = birdStart(time);
+				// 水管运动
+			}
+
+			function stopScript() {
+				if (this.groundEnd) this.groundEnd();
+			}
+
+			let animateID;
+			function animate(time) {
+				if (currentGameStatus === gameStatus.init) {
+					animateID = requestAnimationFrame(animate);
+					execScript();
+					TWEEN.update(time);
+					render();
+				} else {
+					// console.log("## else ===>", animateID);
+					cancelAnimationFrame(animateID);
+				}
+			}
+
+            let cancelId
+			function render() {
+                // 这一行加上会卡
+				// cancelId = requestAnimationFrame(render);
+				renderer.render(scene, camera);
+			}
+
+			init();
+            function startGame() {
+                // cancelAnimationFrame(cancelId);
+                animate();
+            }
+
+            let hasStarted
+            // window.addEventListener('click', () => {
+            //     cancelAnimationFrame(cancelId);
+            //     // if(currentGameStatus === gameStatus.restart) {
+                    
+            //     // }
+            //     if(hasStarted) return
+            //     // currentGameStatus = gameStatus.init
+            //     hasStarted = true
+            //     startGame()
+                
+            // })
+			// render();
+			animate();
+		</script>
+	</body>
+</html>

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Document</title>
+		<link type="text/css" rel="stylesheet" href="../main.css" />
+		<style>
+			.label {
+				color: black;
+			}
+		</style>
+	</head>
+	<body>
+		<script type="module">
+			import * as THREE from "../../build/three.module.js";
+			import { TrackballControls } from "../jsm/controls/TrackballControls.js";
+			import { OrbitControls } from "../jsm/controls/OrbitControls.js";
+			import {
+				CSS2DRenderer,
+				CSS2DObject,
+			} from "../jsm/renderers/CSS2DRenderer.js";
+			// 基本渲染三件套
+			let renderer, scene, camera;
+			// mesh 三大件
+			let mesh, geometry, material, texture;
+			let controls;
+			// css 渲染器
+			let labelRenderer;
+			var textureLoader = new THREE.TextureLoader();
+			init();
+			animate();
+			// render()
+			// 定点概念 几何体结构
+			// http://www.yanhuangxueyuan.com/Three.js/
+			function init() {
+				camera = new THREE.PerspectiveCamera(
+					75,
+					window.innerWidth / window.innerHeight,
+					1,
+					10000
+				);
+				// camera.position.set(200, 200, 1000);
+				camera.position.z = 0
+				scene = new THREE.Scene();
+
+				const ambient = new THREE.AmbientLight(0xffffff);
+				scene.add(ambient);
+
+				const dirLight = new THREE.DirectionalLight(0xffffff);
+				dirLight.position.set(0, 0, 100);
+				scene.add(dirLight);
+
+				// camera.lookAt( scene.position );
+
+				const axis = new THREE.AxesHelper(1000);
+				// 红 x 绿 y 蓝 z
+				axis.setColors(0xff0000, 0x00ff00, 0x0000ff);
+				scene.add(axis);
+
+				// webglRender
+				initWebglRender();
+
+				initCssRenderer();
+
+				// controls
+				initControls();
+
+				geometry = new THREE.BoxGeometry(100, 100, 100); //立方体
+
+				var loader = new THREE.CubeTextureLoader();
+				// 所有贴图在同一目录下，可以使用该方法设置共用路径 ../textures/water/Water_2_M_Normal.jpg
+				loader.setPath("../textures/water/");
+				// 立方体纹理加载器返回立方体纹理对象CubeTexture
+				var CubeTexture = loader.load([
+					'Water_2_M_Normal.jpg',
+					'Water_2_M_Normal.jpg',
+					'Water_2_M_Normal.jpg',
+					'Water_2_M_Normal.jpg',
+					'Water_2_M_Normal.jpg',
+					'Water_2_M_Normal.jpg',
+				]);
+				//材质对象Material
+				var material = new THREE.MeshPhongMaterial({
+					//网格模型设置颜色，网格模型颜色和环境贴图会进行融合计算
+					// color:0xff0000,
+					side: THREE.DoubleSide,
+					envMap: CubeTexture, //设置环境贴图
+					// 环境贴图反射率   控制环境贴图对被渲染三维模型影响程度
+					// reflectivity: 0.1,
+				});
+				console.log(CubeTexture.image);
+				var mesh = new THREE.Mesh(geometry, material); //网格模型对象Mesh
+				scene.add(mesh); //网格模型添加到场景中
+
+				console.log("## geometry ==>", geometry, mesh);
+				window.addEventListener("resize", onWindowResize);
+			}
+
+			function initControls() {
+				const controls = new OrbitControls(camera, labelRenderer.domElement);
+				controls.minDistance = 100;
+				controls.maxDistance = 500;
+			}
+
+			function initWebglRender() {
+				renderer = new THREE.WebGLRenderer({ antialias: true });
+				renderer.setPixelRatio(window.devicePixelRatio);
+				renderer.setSize(window.innerWidth, window.innerHeight);
+				renderer.setClearColor(0xffffff);
+				document.body.appendChild(renderer.domElement);
+			}
+
+			function cssRender(scene, textContent) {
+				const posDiv = document.createElement("div");
+				posDiv.className = "label";
+				posDiv.textContent = textContent;
+				const posLabel = new CSS2DObject(posDiv);
+				posLabel.position.set(...textContent.split(","));
+				scene.add(posLabel);
+			}
+
+			function initCssRenderer() {
+				labelRenderer = new CSS2DRenderer();
+				labelRenderer.setSize(window.innerWidth, window.innerHeight);
+				labelRenderer.domElement.style.position = "absolute";
+				labelRenderer.domElement.style.top = "0px";
+				document.body.appendChild(labelRenderer.domElement);
+			}
+
+			function animate() {
+				requestAnimationFrame(animate);
+				renderer.render(scene, camera);
+				labelRenderer.render(scene, camera);
+				// texture && (texture.offset.x -= 0.06)
+			}
+
+			// function animate() {
+			// 	requestAnimationFrame(animate);
+
+			// 	render();
+			// }
+
+			function render() {
+				renderer.render(scene, camera);
+			}
+
+			function onWindowResize() {
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+				renderer.setSize(window.innerWidth, window.innerHeight);
+				labelRenderer.setSize(window.innerWidth, window.innerHeight);
+			}
+		</script>
+	</body>
+</html>

@@ -51,6 +51,11 @@
 				scene = new THREE.Scene();
 				scene.background = new THREE.Color( 0xf0f0f0 );
 
+				const axis = new THREE.AxisHelper(1000);
+				// 红 x 绿 y 蓝 z
+				axis.setColors(0xff0000, 0x00ff00, 0x0000ff);
+				scene.add(axis);
+
 				scene.add( new THREE.AmbientLight( 0x505050 ) );
 
 				const light = new THREE.SpotLight( 0xffffff, 1.5 );
@@ -66,6 +71,7 @@
 				scene.add( light );
 
 				group = new THREE.Group();
+				console.log('## group ==>', group)
 				scene.add( group );
 
 				const geometry = new THREE.BoxGeometry( 40, 40, 40 );
@@ -103,7 +109,7 @@
 				renderer.shadowMap.type = THREE.PCFShadowMap;
 
 				container.appendChild( renderer.domElement );
-
+				console.log('## rect ==>', renderer.domElement.getBoundingClientRect())
 				controls = new DragControls( [ ... objects ], camera, renderer.domElement );
 				controls.addEventListener( 'drag', render );
 
@@ -131,7 +137,7 @@
 			}
 
 			function onKeyDown( event ) {
-
+				console.log('## event ==>', event)
 				enableSelection = ( event.keyCode === 16 ) ? true : false;
 
 			}
@@ -147,15 +153,15 @@
 				event.preventDefault();
 
 				if ( enableSelection === true ) {
-
+					console.log('## enable selection ==>', enableSelection)
 					const draggableObjects = controls.getObjects();
 					draggableObjects.length = 0;
-
+					// 计算公式推导 https://segmentfault.com/a/1190000010490845
 					mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
 					mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
 
 					raycaster.setFromCamera( mouse, camera );
-
+					// 第二个参数表示 递归
 					const intersections = raycaster.intersectObjects( objects, true );
 
 					if ( intersections.length > 0 ) {
@@ -165,6 +171,7 @@
 						if ( group.children.includes( object ) === true ) {
 
 							object.material.emissive.set( 0x000000 );
+							// todos 这个方法的作用？？
 							scene.attach( object );
 
 						} else {

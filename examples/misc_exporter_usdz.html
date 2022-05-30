@@ -108,7 +108,7 @@
 				const canvas = document.createElement( 'canvas' );
 				canvas.width = 128;
 				canvas.height = 128;
-
+				// 创建渐变
 				const context = canvas.getContext( '2d' );
 				const gradient = context.createRadialGradient( canvas.width / 2, canvas.height / 2, 0, canvas.width / 2, canvas.height / 2, canvas.width / 2 );
 				gradient.addColorStop( 0.1, 'rgba(130,130,130,1)' );

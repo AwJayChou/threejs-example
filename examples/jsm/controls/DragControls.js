@@ -146,7 +146,7 @@ class DragControls extends EventDispatcher {
 
 			_raycaster.setFromCamera( _pointer, _camera );
 			_raycaster.intersectObjects( _objects, true, _intersections );
-
+			console.log('## _intersections', _intersections, _intersections.length > 0, _intersections[0], _raycaster)
 			if ( _intersections.length > 0 ) {
 
 				_selected = ( scope.transformGroup === true ) ? _objects[ 0 ] : _intersections[ 0 ].object;

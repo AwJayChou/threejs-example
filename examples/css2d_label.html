@@ -54,8 +54,9 @@
 				// https://threejs.org/docs/index.html?q=MeshPhongMaterial#api/en/materials/MeshPhongMaterial
 
 				const earthGeometry = new THREE.SphereGeometry( EARTH_RADIUS, 16, 16 );
+				// 光亮的材质
 				const earthMaterial = new THREE.MeshPhongMaterial( {
-					specular: 0x333333,
+					specular: 0x333333, // This defines how shiny the material is and the color of its shine.
 					shininess: 5,
 					map: textureLoader.load( 'textures/planets/earth_atmos_2048.jpg' ),
 					specularMap: textureLoader.load( 'textures/planets/earth_specular_2048.jpg' ),
@@ -81,6 +82,7 @@
 				earthDiv.style.marginTop = '-1em';
 				const earthLabel = new CSS2DObject( earthDiv );
 				earthLabel.position.set( 0, EARTH_RADIUS, 0 );
+				// 光这个object 并不能加载出来
 				earth.add( earthLabel );
 
 				const moonDiv = document.createElement( 'div' );
@@ -91,19 +93,19 @@
 				moonLabel.position.set( 0, MOON_RADIUS, 0 );
 				moon.add( moonLabel );
 
-				//
-
 				renderer = new THREE.WebGLRenderer();
 				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setClearColor(0xffffff)
 				renderer.setSize( window.innerWidth, window.innerHeight );
 				document.body.appendChild( renderer.domElement );
 
+				// 只有加了render才可以出来
 				labelRenderer = new CSS2DRenderer();
 				labelRenderer.setSize( window.innerWidth, window.innerHeight );
 				labelRenderer.domElement.style.position = 'absolute';
 				labelRenderer.domElement.style.top = '0px';
 				document.body.appendChild( labelRenderer.domElement );
-
+				// 实现缩放功能
 				const controls = new OrbitControls( camera, labelRenderer.domElement );
 				controls.minDistance = 5;
 				controls.maxDistance = 100;
@@ -132,7 +134,8 @@
 				requestAnimationFrame( animate );
 
 				const elapsed = clock.getElapsedTime();
-
+				// console.log('## elapsed ==>', Math.sin( elapsed ) * 5, Math.cos( elapsed ) * 5)
+				// 围绕着哪根轴旋转，哪根轴就为0
 				moon.position.set( Math.sin( elapsed ) * 5, 0, Math.cos( elapsed ) * 5 );
 
 				renderer.render( scene, camera );

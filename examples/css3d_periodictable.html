@@ -225,7 +225,7 @@
 
 			const objects = [];
 			const targets = { table: [], sphere: [], helix: [], grid: [] };
-
+			window.targets = targets
 			init();
 			animate();
 
@@ -233,8 +233,13 @@
 
 				camera = new THREE.PerspectiveCamera( 40, window.innerWidth / window.innerHeight, 1, 10000 );
 				camera.position.z = 3000;
-
+				
 				scene = new THREE.Scene();
+
+				const axis = new THREE.AxisHelper(1000);
+				// 红 x 绿 y 蓝 z
+				axis.setColors(0xff0000, 0x00ff00, 0x0000ff)
+				scene.add(axis)
 
 				// table
 
@@ -246,6 +251,7 @@
 
 					const number = document.createElement( 'div' );
 					number.className = 'number';
+					// i 每次都是5的倍数
 					number.textContent = ( i / 5 ) + 1;
 					element.appendChild( number );
 
@@ -256,13 +262,14 @@
 
 					const details = document.createElement( 'div' );
 					details.className = 'details';
+					// "H", "Hydrogen", "1.00794", 1, 1,
 					details.innerHTML = table[ i + 1 ] + '<br>' + table[ i + 2 ];
 					element.appendChild( details );
-
+					// console.log('## element ==>', element)
 					const objectCSS = new CSS3DObject( element );
-					objectCSS.position.x = Math.random() * 4000 - 2000;
-					objectCSS.position.y = Math.random() * 4000 - 2000;
-					objectCSS.position.z = Math.random() * 4000 - 2000;
+					// objectCSS.position.x = Math.random() * 4000 - 2000;
+					// objectCSS.position.y = Math.random() * 4000 - 2000;
+					// objectCSS.position.z = Math.random() * 4000 - 2000;
 					scene.add( objectCSS );
 
 					objects.push( objectCSS );

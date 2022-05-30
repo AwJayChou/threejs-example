@@ -40,7 +40,8 @@
 
 				scene = new THREE.Scene();
 				scene.background = new THREE.Color( 0xcccccc );
-				scene.fog = new THREE.FogExp2( 0xcccccc, 0.002 );
+				// scene.fog = new THREE.FogExp2( 0xcccccc, 0.002 );
+				scene.fog = new THREE.FogExp2( 0xcccccc, 0.001 );
 
 				renderer = new THREE.WebGLRenderer( { antialias: true } );
 				renderer.setPixelRatio( window.devicePixelRatio );
@@ -58,7 +59,7 @@
 
 				controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
 				controls.dampingFactor = 0.05;
-
+				// 若为 true 则可以平移
 				controls.screenSpacePanning = false;
 
 				controls.minDistance = 100;
@@ -90,10 +91,13 @@
 				// lights
 
 				const dirLight1 = new THREE.DirectionalLight( 0xffffff );
+				// dirLight1.position.set( 1, 1, 1 );
 				dirLight1.position.set( 1, 1, 1 );
 				scene.add( dirLight1 );
 
 				const dirLight2 = new THREE.DirectionalLight( 0x002288 );
+				// const dirLight2 = new THREE.DirectionalLight( 0xff0000 );
+				// dirLight2.position.set( - 1, - 1, - 1 );
 				dirLight2.position.set( - 1, - 1, - 1 );
 				scene.add( dirLight2 );
 

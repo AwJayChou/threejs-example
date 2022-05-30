@@ -37,6 +37,7 @@
 			import { EffectComposer } from './jsm/postprocessing/EffectComposer.js';
 			import { RenderPass } from './jsm/postprocessing/RenderPass.js';
 			import { FilmPass } from './jsm/postprocessing/FilmPass.js';
+			import { BloomPass } from './jsm/postprocessing/BloomPass.js';
 
 			const radius = 6371;
 			const tilt = 0.41;
@@ -165,6 +166,7 @@
 					new THREE.PointsMaterial( { color: 0x555555, size: 1, sizeAttenuation: false } ),
 					new THREE.PointsMaterial( { color: 0x333333, size: 2, sizeAttenuation: false } ),
 					new THREE.PointsMaterial( { color: 0x3a3a3a, size: 1, sizeAttenuation: false } ),
+					// new THREE.PointsMaterial( { color: 0xff0000, size: 1, sizeAttenuation: false } ),
 					new THREE.PointsMaterial( { color: 0x1a1a1a, size: 2, sizeAttenuation: false } ),
 					new THREE.PointsMaterial( { color: 0x1a1a1a, size: 1, sizeAttenuation: false } )
 				];
@@ -208,10 +210,17 @@
 				window.addEventListener( 'resize', onWindowResize );
 
 				// postprocessing
-
+				// EffectComposer 必须使用renderPass 否则无法输出
 				const renderModel = new RenderPass( scene, camera );
-				const effectFilm = new FilmPass( 0.35, 0.75, 2048, false );
-
+				// const effectFilm = new FilmPass( 0.35, 0.75, 2048, false );
+				// noiseIntensity:场景的粗糙程度
+				// scanlinesIntensity:扫描线的显著程度
+				// scanLinesCount:扫描线的数量
+				// gratScale:是否使用灰度图输出
+				const effectFilm = new FilmPass( 0.75, 1, 4096, false );
+				const bloomPass = new BloomPass(3, 25, 5.0, 256);
+				// 后期处理
+				// https://blog.csdn.net/a13602955218/article/details/85222993
 				composer = new EffectComposer( renderer );
 
 				composer.addPass( renderModel );

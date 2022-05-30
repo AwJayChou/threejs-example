@@ -153,7 +153,7 @@
 				_raycaster.setFromCamera( _pointer, _camera );
 
 				_raycaster.intersectObjects( _objects, true, _intersections );
-
+				console.log('## intersectObjects ==>', _intersections)
 				if ( _intersections.length > 0 ) {
 
 					_selected = scope.transformGroup === true ? _objects[ 0 ] : _intersections[ 0 ].object;

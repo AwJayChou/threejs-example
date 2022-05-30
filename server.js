@@ -13,5 +13,5 @@ const port = 9000;
 // ))
 app.use(serve('./'))
 app.listen(port , () => {
-    console.log(`server is running on ${port}`)
+    console.log(`server is running on http://localhost:9000 \n http://localhost:9000/public/examples`)
 });
